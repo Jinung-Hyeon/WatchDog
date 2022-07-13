@@ -54,6 +54,19 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, snapshot.toString() );
                 Log.e(TAG, snapshot.getValue().toString() );
                 Log.e(TAG, snapshot.getKey() );
+                info get = snapshot.getValue(info.class);
+                Log.e(TAG, String.valueOf(get.user));
+                Log.e(TAG, String.valueOf(get.status));
+                if (String.valueOf(get.user).equals("0")){
+                    // 일과시간 보다 일찍 앱이 종료되면 예기치 않은 종료라 판단하고 다시 앱실행.
+                    if (workTime() > System.currentTimeMillis()){
+                        Log.e(TAG, "일과시간 : " + workTime() + " 현재시간 : " + System.currentTimeMillis() + ". 아직 일과시간입니다. 앱을 다시 실행시킵니다.");
+                        getPackageList("did");
+                    }
+                } else else if(snapshot.getValue().toString().equals("connected")){
+                    Log.e(TAG, "WatchDog앱이 다시 연결되었습니다.");
+                }
+
             }
 
             @Override
@@ -71,15 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, snapshot.getValue().toString() );
                 Log.e(TAG, snapshot.getKey() );
                 // DID앱이 꺼지면 다시실행
-                if (snapshot.getValue().toString().equals("disconnected")){
-                    // 일과시간 보다 일찍 앱이 종료되면 예기치 않은 종료라 판단하고 다시 앱실행.
-                    if (workTime() > System.currentTimeMillis()){
-                        Log.e(TAG, "일과시간 : " + workTime() + " 현재시간 : " + System.currentTimeMillis() + ". 아직 일과시간입니다. 앱을 다시 실행시킵니다.");
-                        getPackageList("did");
-                    }
-                } else if(snapshot.getValue().toString().equals("connected")){
-                    Log.e(TAG, "WatchDog앱이 다시 연결되었습니다.");
-                }
+
             }
 
             @Override
