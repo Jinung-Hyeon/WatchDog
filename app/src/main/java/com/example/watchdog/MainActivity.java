@@ -1,12 +1,19 @@
 package com.example.watchdog;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
@@ -23,94 +30,50 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "osslog";
-    FirebaseDatabase database;
-    DatabaseReference connectedRef, myStatus, clientStatus, clientSignal, info;
+    private static final int ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE = 1;
 
-    // 시간 비교를 위한 객체
-    Calendar calendar;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        database = FirebaseDatabase.getInstance();
-        connectedRef = database.getReference(".info/connected");
-        myStatus = database.getReference("STATUS_Server");
-        clientStatus = database.getReference("STATUS_Client");
-        clientSignal = database.getReference("Client_Signal");
-        info = database.getReference("INFO");
 
 
-        // 앱이 데이터베이스와 연결이 끊겼을시 파이어베이스 STATUS_Server 노드에 값 저장
-        myStatus.onDisconnect().setValue("disconnected");
-
-        // 일과 시간 메소드
-        workTime();
-
-        info.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.e(TAG, snapshot.toString() );
-                Log.e(TAG, snapshot.getValue().toString() );
-                Log.e(TAG, snapshot.getKey() );
-                info get = snapshot.getValue(info.class);
-                Log.e(TAG, String.valueOf(get.user));
-                Log.e(TAG, String.valueOf(get.status));
-                if (String.valueOf(get.user).equals("0")){
-                    // 일과시간 보다 일찍 앱이 종료되면 예기치 않은 종료라 판단하고 다시 앱실행.
-                    if (workTime() > System.currentTimeMillis()){
-                        Log.e(TAG, "일과시간 : " + workTime() + " 현재시간 : " + System.currentTimeMillis() + ". 아직 일과시간입니다. 앱을 다시 실행시킵니다.");
-                        getPackageList("did");
-                    }
-                } else else if(snapshot.getValue().toString().equals("connected")){
-                    Log.e(TAG, "WatchDog앱이 다시 연결되었습니다.");
-                }
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {   // 마시멜로우 이상일 경우
+            if (!Settings.canDrawOverlays(this)) {              // 다른앱 위에 그리기 체크
+                Uri uri = Uri.fromParts("package" , getPackageName(), null);
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri);
+                startActivityForResult(intent, ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE);
+            } else {
+                startForeground();
             }
+        } else {
+            startForeground();
+        }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+    }
 
+    public void startForeground(){
+        if(!foregroundServiceRunning()){
+            Intent serviceIntent = new Intent(this, MyForegroundService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                startForegroundService(serviceIntent);
             }
-        });
+        }
+    }
 
-
-        // 클라이언트의 STATUS가 변경될때 동작하는 이벤트 리스너
-        clientStatus.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.e(TAG, snapshot.toString() );
-                Log.e(TAG, snapshot.getValue().toString() );
-                Log.e(TAG, snapshot.getKey() );
-                // DID앱이 꺼지면 다시실행
-
+    //포그라운드 서비스가 실행중인지 확인하는 메소드
+    public boolean foregroundServiceRunning() {
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for(ActivityManager.RunningServiceInfo service: activityManager.getRunningServices(Integer.MAX_VALUE)){
+            if (MyForegroundService.class.getName().equals(service.service.getClassName())){
+                return true;
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-
-
-        // 이 앱이 다시 연결되었을때 반응하는 이벤트 리스너
-        connectedRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                boolean connected = snapshot.getValue(Boolean.class);
-                if (connected) {
-                    Log.e(TAG, "connected!");
-                    myStatus.setValue("connected");
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(TAG, "onCancelled!! " + error);
-            }
-        });
+        }
+        return false;
     }
 
     //다른 앱을 실행시켜주는 메소드
@@ -138,13 +101,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 일과 시간 지정하는 메소드
-    public long workTime(){
-        calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 15);
-        calendar.set(Calendar.MINUTE, 30);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis();
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE) {
+            if (!Settings.canDrawOverlays(this)) {
+                finish();
+            } else {
+                startForeground();
+            }
+        }
     }
 }
