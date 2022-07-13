@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Log.e(TAG, snapshot.toString() );
                 Log.e(TAG, snapshot.getValue().toString() );
-                Log.e(TAG, snapshot.getValue() );
+                Log.e(TAG, snapshot.getKey() );
             }
 
             @Override
