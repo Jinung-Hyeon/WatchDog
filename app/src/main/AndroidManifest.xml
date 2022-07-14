@@ -4,14 +4,12 @@
     package="com.example.watchdog">
 
     <!-- 다른앱 실행시켜주기 위해 필요한 권한 -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
-
-    <!-- 다른앱 위에 그리기 권한 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
-    <!-- 포그라운드 서비스를 사용하기 위한 권한 -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" /> <!-- 다른앱 위에 그리기 권한 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 포그라운드 서비스를 사용하기 위한 권한 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 부팅완료시 알람을 받을 수 있는 권한 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -20,6 +18,20 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WatchDog">
+
+        <!-- 부팅 리시버 등록 -->
+        <receiver
+            android:name=".MyBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -32,7 +44,7 @@
 
         <service
             android:name=".MyForegroundService"
-            android:enabled="true"/>
+            android:enabled="true" />
     </application>
 
 </manifest>

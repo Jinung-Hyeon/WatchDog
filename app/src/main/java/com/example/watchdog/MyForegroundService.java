@@ -39,7 +39,7 @@ public class MyForegroundService extends Service {
     Calendar calendar;
 
     FirebaseDatabase database;
-    DatabaseReference connectedRef, myStatus, clientStatus, clientSignal, adminSignal;
+    DatabaseReference connectedRef, myStatus, clientStatus, adminSignal;
 
 
     @Override
@@ -76,10 +76,9 @@ public class MyForegroundService extends Service {
 
         database = FirebaseDatabase.getInstance();
         connectedRef = database.getReference(".info/connected");
-        myStatus = database.getReference("STATUS_Server");
-        clientStatus = database.getReference("STATUS_Client");
-        clientSignal = database.getReference("Client_Signal");
-        adminSignal = database.getReference("ADMIN_SIGNAL");
+        myStatus = database.getReference("yeonggwang1/STATUS_Server");
+        clientStatus = database.getReference("yeonggwang1/STATUS_Client");
+        adminSignal = database.getReference("yeonggwang1/ADMIN_SIGNAL");
 
 
         // 앱이 데이터베이스와 연결이 끊겼을시 파이어베이스 STATUS_Server 노드에 값 저장
