@@ -10,6 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -32,11 +33,13 @@ public class MyForegroundService extends Service {
 
     private static final String TAG = "ServerTest";
 
+    public static int SIGNAL = 0;
+
     // 시간 비교를 위한 객체
     Calendar calendar;
 
     FirebaseDatabase database;
-    DatabaseReference connectedRef, myStatus, clientStatus, clientSignal, info;
+    DatabaseReference connectedRef, myStatus, clientStatus, clientSignal, adminSignal;
 
 
     @Override
@@ -76,7 +79,7 @@ public class MyForegroundService extends Service {
         myStatus = database.getReference("STATUS_Server");
         clientStatus = database.getReference("STATUS_Client");
         clientSignal = database.getReference("Client_Signal");
-        info = database.getReference("INFO");
+        adminSignal = database.getReference("ADMIN_SIGNAL");
 
 
         // 앱이 데이터베이스와 연결이 끊겼을시 파이어베이스 STATUS_Server 노드에 값 저장
@@ -85,29 +88,14 @@ public class MyForegroundService extends Service {
         // 일과 시간 메소드
         workTime();
 
-
-        info.addValueEventListener(new ValueEventListener() {
+        adminSignal.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.e(TAG, snapshot.toString() );
                 Log.e(TAG, snapshot.getValue().toString() );
-                Log.e(TAG, snapshot.getKey() );
-
-                info get = snapshot.getValue(info.class);
-                Log.e(TAG, String.valueOf(get.user));
-                Log.e(TAG, String.valueOf(get.status));
-
-                // 클라이언트에서 뒤로가기버튼을 두번눌러 의도적으로 종료하려는경우 user에 1을 보내 앱을 자동으로 실행해주는것을 방지
-                if (String.valueOf(get.status).equals("HOME")) { // 클라이언트에서 홈키를 누르면 status에 "HOME"을 보내 앱을 다시 실행시킴
+                SIGNAL = Integer.parseInt(snapshot.getValue().toString());
+                if (SIGNAL == 2) {
+                    Log.e(TAG, "사용자가 HOME키를 눌렀습니다. 다시 앱을 실행시킵니다.");
                     getPackageList("did");
-                } else if (String.valueOf(get.user).equals("0")){
-                    // 일과시간 보다 일찍 앱이 종료되면 예기치 않은 종료라 판단하고 다시 앱실행.
-                    if (workTime() > System.currentTimeMillis()){
-                        Log.e(TAG, "일과시간 : " + workTime() + " 현재시간 : " + System.currentTimeMillis() + ". 아직 일과시간입니다. 앱을 다시 실행시킵니다.");
-                        getPackageList("did");
-                    }
-                }  else if(snapshot.getValue().toString().equals("connected")){
-                    Log.e(TAG, "WatchDog앱이 다시 연결되었습니다.");
                 }
 
             }
@@ -124,9 +112,19 @@ public class MyForegroundService extends Service {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Log.e(TAG, snapshot.toString() );
-                Log.e(TAG, snapshot.getValue().toString() );
+                Log.e(TAG, " clientStatus : " + snapshot.getValue().toString() );
                 Log.e(TAG, snapshot.getKey() );
-                // DID앱이 꺼지면 다시실행
+
+                // 클라이언트에서 뒤로가기버튼 두번을 누르면 1을 보내 의도적으로 종료시킨걸로 판단하고 앱을 다시 실행 시키지 않는다.
+                if (SIGNAL == 1 && snapshot.getValue().toString().equals("disconnected")) {
+                    Log.e(TAG, "관리자 권한에 의해 DID가 종료되었습니다.");
+                    adminSignal.setValue(0);
+                } else if (snapshot.getValue().toString().equals("disconnected")) { // 그 외에 의도치 않게 종료됐을때 일과시간이라면 앱을 다시 실행시킴
+                    if (workTime() > System.currentTimeMillis()) {
+                        Log.e(TAG, "일과시간 : " + workTime() + " 현재시간 : " + System.currentTimeMillis() + ". 아직 일과시간입니다. 앱을 다시 실행시킵니다.");
+                        getPackageList("did");
+                    }
+                }
 
             }
 
@@ -146,6 +144,7 @@ public class MyForegroundService extends Service {
                 if (connected) {
                     Log.e(TAG, "connected!");
                     myStatus.setValue("connected");
+
                 }
             }
 
