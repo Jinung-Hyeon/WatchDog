@@ -6,10 +6,10 @@
     <!-- 다른앱 실행시켜주기 위해 필요한 권한 -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" /> <!-- 다른앱 위에 그리기 권한 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 포그라운드 서비스를 사용하기 위한 권한 -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 부팅완료시 알람을 받을 수 있는 권한 -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 다른앱 위에 그리기 권한 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 포그라운드 서비스를 사용하기 위한 권한 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><!-- 부팅완료시 알람을 받을 수 있는 권한 -->
 
     <application
         android:allowBackup="true"
